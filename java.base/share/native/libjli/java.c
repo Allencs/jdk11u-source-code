@@ -216,6 +216,7 @@ static jlong initialHeapSize    = 0;  /* inital heap size */
 /*
  * Entry point.
  */
+// 该函数是jvm启动的前半部分，加载动态库，解析参数。
 JNIEXPORT int JNICALL
 JLI_Launch(int argc, char ** argv,              /* main argc, argv */
         int jargc, const char** jargv,          /* java args */
@@ -230,14 +231,21 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argv */
         jint ergo                               /* unused */
 )
 {
+    // 启动模式，jar启动还是 main class 启动
     int mode = LM_UNKNOWN;
+    // 保存启动类名称
     char *what = NULL;
+    // 主类引用
     char *main_class = NULL;
     int ret;
+    // 加载JAVA_DLL时，将一些函数链接到此变量
     InvocationFunctions ifn;
     jlong start = 0, end = 0;
+    // JAVA_DLL动态库路径
     char jvmpath[MAXPATHLEN];
+    // jre路径
     char jrepath[MAXPATHLEN];
+    // jvm.cfg 文件路径
     char jvmcfg[MAXPATHLEN];
 
     _fVersion = fullversion;
@@ -245,9 +253,11 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argv */
     _program_name = pname;
     _is_java_args = javaargs;
     _wc_enabled = cpwildcard;
-
+    // 是否javaw模式启动
     InitLauncher(javaw);
+    // 判断是否打印一些调试信息（如果不是debug模式，直接返回）
     DumpState();
+    // 判断_launcher_debug变量
     if (JLI_IsTraceLauncher()) {
         int i;
         printf("Java args:\n");
@@ -271,8 +281,10 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argv */
      *     the pre 1.9 JRE [ 1.6 thru 1.8 ], it is as if 1.9+ has been
      *     invoked from the command line.
      */
+    // 需要指定版本的jre才能运行，通过命令行“-version:”命令，或者读取jar文件的mainfest文件
     SelectVersion(argc, argv, &main_class);
 
+    // 准备环境，搜索jrepath和jvmpath
     CreateExecutionEnvironment(&argc, &argv,
                                jrepath, sizeof(jrepath),
                                jvmpath, sizeof(jvmpath),
@@ -282,13 +294,16 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argv */
         SetJvmEnvironment(argc,argv);
     }
 
+    // 创建虚拟机（动态链接库的函数）
     ifn.CreateJavaVM = 0;
+    // 初始化默认参数
     ifn.GetDefaultJavaVMInitArgs = 0;
 
     if (JLI_IsTraceLauncher()) {
         start = CounterGet();
     }
 
+    // 加载JAVA_DLL到内存，并将动态库中的函数链接至ifn.CreateJavaVM，ifn.GetDefaultJavaVMInitArgs
     if (!LoadJavaVM(jvmpath, &ifn)) {
         return(6);
     }
@@ -313,6 +328,7 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argv */
         /* Set default CLASSPATH */
         char* cpath = getenv("CLASSPATH");
         if (cpath != NULL) {
+            // 设置CLASSPATH，将"-Djava.class.path=."字符串插入到JavaVMOption *options变量中
             SetClassPath(cpath);
         }
     }
@@ -320,11 +336,13 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argv */
     /* Parse command line options; if the return value of
      * ParseArguments is false, the program should exit.
      */
+    // 解析所有option参数，并将其存到JavaVMOption *options中
     if (!ParseArguments(&argc, &argv, &mode, &what, &ret, jrepath)) {
         return(ret);
     }
 
     /* Override class path if -jar flag was specified */
+    // -jar模式
     if (mode == LM_JAR) {
         SetClassPath(what);     /* Override class path */
     }
@@ -337,7 +355,8 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argv */
 
     /* set the -Dsun.java.launcher.* platform properties */
     SetJavaLauncherPlatformProps();
-
+    
+    // 开启新线程去初始化JVM
     return JVMInit(&ifn, threadStackSize, argc, argv, mode, what, ret);
 }
 /*

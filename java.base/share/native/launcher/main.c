@@ -100,6 +100,7 @@ main(int argc, char **argv)
     char** margv;
     int jargc;
     char** jargv;
+    // 是否以javaw的方式启动
     const jboolean const_javaw = JNI_FALSE;
 #endif /* JAVAW */
     {
@@ -200,6 +201,7 @@ main(int argc, char **argv)
         margc = args->size;
         // add the NULL pointer at argv[argc]
         JLI_List_add(args, NULL);
+        // 接收命令行参数
         margv = args->elements;
     }
 #endif /* WIN32 */

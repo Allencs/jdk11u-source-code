@@ -64,7 +64,8 @@ class DictionaryEntry;
 class Dictionary;
 
 // GC root for walking class loader data created
-
+// 所有CLD连接起来构成一幅CLD图，即ClassLoaderDataGraph
+// 通过调用ClassLoaderDataGraph::classes_do可以在垃圾回收过程中很容易地遍历该结构找到所有类加载器加载的所有类
 class ClassLoaderDataGraph : public AllStatic {
   friend class ClassLoaderData;
   friend class ClassLoaderDataGraphMetaspaceIterator;
@@ -221,9 +222,10 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   static ClassLoaderData * _the_null_class_loader_data;
 
   WeakHandle<vm_class_loader_data> _holder; // The oop that determines lifetime of this class loader
+  // 当前类加载器的Java对象表示
   OopHandle _class_loader;    // The instance of java/lang/ClassLoader associated with
                               // this ClassLoaderData
-
+  // 管理的metaspace内存
   ClassLoaderMetaspace * volatile _metaspace;  // Meta-space where meta-data defined by the
                                     // classes in the class loader are allocated.
   Mutex* _metaspace_lock;  // Locks the metaspace for allocations and setup.
@@ -246,7 +248,8 @@ class ClassLoaderData : public CHeapObj<mtClass> {
                               // have the same life cycle of the corresponding ClassLoader.
 
   NOT_PRODUCT(volatile int _dependency_count;)  // number of class loader dependencies
-
+  
+  // InstanceKlass，普通的Java类在MetaSpace中的实例
   Klass* volatile _klasses;              // The classes defined by the class loader.
   PackageEntryTable* volatile _packages; // The packages defined by the class loader.
   ModuleEntryTable*  volatile _modules;  // The modules defined by the class loader.
@@ -263,6 +266,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   GrowableArray<Metadata*>*      _deallocate_list;
 
   // Support for walking class loader data objects
+  // 指向下一个CLD，所有CLD连接起来构成一幅CLD图，即ClassLoaderDataGraph
   ClassLoaderData* _next; /// Next loader_datas created
 
   Klass*  _class_loader_klass;

@@ -57,6 +57,7 @@ private:
   // The string table
   static StringTable* _the_table;
   // Shared string table
+  // 多个JVM共享常量池
   static CompactHashtable<oop, char> _shared_table;
   static bool _shared_string_mapped;
   static bool _alt_hash;

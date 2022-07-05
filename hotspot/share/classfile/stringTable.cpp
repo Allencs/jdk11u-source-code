@@ -264,6 +264,8 @@ class StringTableGet : public StackObj {
   }
 };
 
+// 通过字符串查找对应的String对象。最终会执行到do_lookup()这个方法
+// 返回值类型是oop也即普通对象引用
 oop StringTable::do_lookup(jchar* name, int len, uintx hash) {
   Thread* thread = Thread::current();
   StringTableLookupJchar lookup(thread, hash, name, len);

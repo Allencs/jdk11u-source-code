@@ -6152,6 +6152,7 @@ void ClassFileParser::parse_stream(const ClassFileStream* const stream,
   _access_flags.set_flags(flags);
 
   // This class and superclass
+  // 读取this_class和super_class
   _this_class_index = stream->get_u2_fast();
   check_property(
     valid_cp_range(_this_class_index, cp_size) &&
@@ -6159,6 +6160,18 @@ void ClassFileParser::parse_stream(const ClassFileStream* const stream,
     "Invalid this class index %u in constant pool in class file %s",
     _this_class_index, CHECK);
 
+  /**
+   * @brief 
+   * Java所有的类最终都继承自Object类，每个类的常量池都会包含诸如“[java/lang/Object;”的字符串。
+   * 为了节省内存，HotSpotVM用Symbol唯一表示常量池中的字符串，所有Symbol统一存放到SymbolTable中。
+   * SymbolTable是一个并发哈希表，虚拟机会根据该表中Symbol的哈希值判断是返回已有的Symbol还是创建新的Symbol。
+   * 
+   * SymbolTable有个特别的地方：它使用引用计数管理Symbol。如果两个类常量池都包含字符串“helloworld”，
+   * 当两个类都卸载后该Symbol计数为0，且下一次垃圾回收的时候不会做可达性分析，而是直接清除。
+   * 
+   * 在HotSpotVM中，SymbolTable还有个孪生兄弟StringTable。StringTable这个名字可能比较陌生，
+   * 但是读者一定见过String.intern()，源码位置：src/hotspot/share/prims/jvm.cpp中的JVM_InternString
+   */
   Symbol* const class_name_in_cp = cp->klass_name_at(_this_class_index);
   assert(class_name_in_cp != NULL, "class_name can't be null");
 

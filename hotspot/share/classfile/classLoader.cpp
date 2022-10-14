@@ -1492,6 +1492,7 @@ InstanceKlass* ClassLoader::load_class(Symbol* name, bool search_append_only, TR
   ClassLoaderData* loader_data = ClassLoaderData::the_null_class_loader_data();
   Handle protection_domain;
 
+  // 读取磁盘上的class文件并通过ClassFileParser进行解析
   InstanceKlass* result = KlassFactory::create_from_stream(stream,
                                                            name,
                                                            loader_data,

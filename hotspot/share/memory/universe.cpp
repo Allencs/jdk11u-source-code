@@ -731,6 +731,7 @@ jint universe_init() {
 #endif
   {
     SymbolTable::create_table();
+    // 初始化字符串常量池，底层使用ConcurrentHashTable（记录的是字符串序列和String对象引用的映射关系）
     StringTable::create_table();
 
 #if INCLUDE_CDS

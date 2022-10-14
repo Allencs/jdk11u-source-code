@@ -140,8 +140,8 @@ class ObjectMonitor {
   friend class ObjectWaiter;
   friend class VMStructs;
 
-  volatile markOop   _header;       // displaced object header word - mark
-  void*     volatile _object;       // backward object pointer - strong root
+  volatile markOop   _header;       // displaced object header word - mark [对象头markOop]
+  void*     volatile _object;       // backward object pointer - strong root [存储锁的对象]
  public:
   ObjectMonitor*     FreeNext;      // Free list linkage
  private:
@@ -149,14 +149,14 @@ class ObjectMonitor {
                         sizeof(volatile markOop) + sizeof(void * volatile) +
                         sizeof(ObjectMonitor *));
  protected:                         // protected for JvmtiRawMonitor
-  void *  volatile _owner;          // pointer to owning thread OR BasicLock
+  void *  volatile _owner;          // pointer to owning thread OR BasicLock [标识拥有该monitor的线程（当前获取锁的线程）]
   volatile jlong _previous_owner_tid;  // thread id of the previous owner of the monitor
-  volatile intptr_t  _recursions;   // recursion count, 0 for first entry
-  ObjectWaiter * volatile _EntryList; // Threads blocked on entry or reentry.
+  volatile intptr_t  _recursions;   // recursion count, 0 for first entry [锁的重入次数]
+  ObjectWaiter * volatile _EntryList; // Threads blocked on entry or reentry. [存放在进入或重新进入时被阻塞(blocked)的线程 (也是存竞争锁失败的线程)]
                                       // The list is actually composed of WaitNodes,
                                       // acting as proxies for Threads.
  private:
-  ObjectWaiter * volatile _cxq;     // LL of recently-arrived threads blocked on entry.
+  ObjectWaiter * volatile _cxq;     // LL of recently-arrived threads blocked on entry. [多线程竞争锁会先存到这个单向链表中（FILO）]
   Thread * volatile _succ;          // Heir presumptive thread - used for futile wakeup throttling
   Thread * volatile _Responsible;
 
@@ -167,7 +167,7 @@ class ObjectMonitor {
                                     // at stop-the-world time.  See deflate_idle_monitors().
                                     // _count is approximately |_WaitSet| + |_EntryList|
  protected:
-  ObjectWaiter * volatile _WaitSet; // LL of threads wait()ing on the monitor
+  ObjectWaiter * volatile _WaitSet; // LL of threads wait()ing on the monitor [等待线程（调用wait）组成的双向循环链表，_WaitSet是第一个节点]
   volatile jint  _waiters;          // number of waiting threads
  private:
   volatile int _WaitSetLock;        // protects Wait Queue - simple spinlock

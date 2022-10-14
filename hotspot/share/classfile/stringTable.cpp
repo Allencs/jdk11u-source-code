@@ -311,7 +311,9 @@ oop StringTable::intern(const char* utf8_string, TRAPS) {
 
 oop StringTable::intern(Handle string_or_null_h, jchar* name, int len, TRAPS) {
   // shared table always uses java_lang_String::hash_code
+  // 获取字符串的 hash 值
   unsigned int hash = java_lang_String::hash_code(name, len);
+  // 查看字符串是否在hash table中
   oop found_string = StringTable::the_table()->lookup_shared(name, len, hash);
   if (found_string != NULL) {
     return found_string;
@@ -323,6 +325,7 @@ oop StringTable::intern(Handle string_or_null_h, jchar* name, int len, TRAPS) {
   if (found_string != NULL) {
     return found_string;
   }
+  // 如果hash table中没有，开始新增
   return StringTable::the_table()->do_intern(string_or_null_h, name, len,
                                              hash, THREAD);
 }
@@ -359,6 +362,7 @@ oop StringTable::do_intern(Handle string_or_null_h, jchar* name,
   if (!string_or_null_h.is_null()) {
     string_h = string_or_null_h;
   } else {
+    // 根据 unicode 创建【字符串对象 string】
     string_h = java_lang_String::create_from_unicode(name, len, CHECK_NULL);
   }
 
@@ -371,6 +375,7 @@ oop StringTable::do_intern(Handle string_or_null_h, jchar* name,
          "string must be properly initialized");
   assert(len == java_lang_String::length(string_h()), "Must be same length");
   StringTableLookupOop lookup(THREAD, hash, string_h);
+  // 构造新的 HashtableEntry 节点
   StringTableCreateEntry stc(THREAD, string_h);
 
   bool rehash_warning;
